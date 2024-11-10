@@ -1,5 +1,11 @@
 package main
 
+import (
+	"errors"
+	"fmt"
+	"strings"
+)
+
 type EmptyStruct struct{}
 
 type StandardInformation struct {

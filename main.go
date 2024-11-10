@@ -2,13 +2,13 @@ package main
 
 import (
 	"bufio"
-	"errors"
+	// "errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
 
-	"utils"
+	"github.com/deanerfree/wellsite-helper/utils"
 	// "strings"
 	// "text/scanner"
 )
