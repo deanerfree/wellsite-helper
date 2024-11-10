@@ -1,8 +1,7 @@
 package main
 
 import (
-	"bufio"
-	// "errors"
+	"bufio" // "errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -74,7 +73,7 @@ func scanLasFile(lasFile string) {
 			continue
 		}
 
-		utils.parseData(line, target)
+		utils.ParseData(line, target)
 
 	}
 
@@ -85,5 +84,5 @@ func main() {
 	// setup server
 
 	scanLasFile("mockData/test2.las")
-	fmt.Printf("LasData: %s\n", lasData)
+	fmt.Printf("LasData: %s\n", utils.LasData)
 }

@@ -1,4 +1,4 @@
-package main
+package utils
 
 import (
 	"errors"
@@ -38,7 +38,7 @@ type AsciiLog struct {
 	Fields []map[string]string // List of data rows, each row is a map of field values
 }
 
-var lasData = struct {
+var LasData = struct {
 	VersionInformation   VersionInformation
 	WellInformation      WellInformation
 	CurveInformation     CurveInformation
@@ -63,14 +63,14 @@ var lasData = struct {
 
 func handleStandardInformation(line string) (Data, error) {
 	if line == "" {
-		return Data{}, errors.New("Empty line")
+		return Data{}, errors.New("empty line")
 	}
 
 	index := strings.Index(line, ".")
 	descriptionIndex := strings.LastIndex(line, ":")
 
 	if index == -1 || descriptionIndex == -1 {
-		return Data{}, errors.New("Invalid line format")
+		return Data{}, errors.New("invalid line format")
 	}
 
 	key := strings.TrimSpace(line[:index])
@@ -117,7 +117,7 @@ func handleCurveInformation(line string) Data {
 func handleData(line string) map[string]string {
 	// Split the line by whitespace to get each data value
 	values := strings.Fields(line)
-	if len(values) != len(lasData.CurveInformation.CurveOrder) {
+	if len(values) != len(LasData.CurveInformation.CurveOrder) {
 		fmt.Println("Data line does not match curve information")
 		return nil
 	}
@@ -125,16 +125,16 @@ func handleData(line string) map[string]string {
 	// Map each value to the curve name and add it as a new entry in wellData.Fields
 	dataEntry := make(map[string]string)
 	for i, value := range values {
-		curveName := lasData.CurveInformation.CurveOrder[i]
+		curveName := LasData.CurveInformation.CurveOrder[i]
 		dataEntry[curveName] = value
 	}
-	lasData.WellData.Fields = append(lasData.WellData.Fields, dataEntry)
+	LasData.WellData.Fields = append(LasData.WellData.Fields, dataEntry)
 	// fmt.Printf("Added data entry: %+v\n", dataEntry)
 
 	return dataEntry
 }
 
-func parseData(line string, target string) []string {
+func ParseData(line string, target string) []string {
 	substrings := []string{"~Version", "~WELL", "#", "~Curve", "~Parameter", "~Other", "~A"}
 	for _, substring := range substrings {
 		if strings.Contains(line, substring) {
@@ -151,7 +151,7 @@ func parseData(line string, target string) []string {
 			return nil
 		}
 
-		lasData.VersionInformation.Fields[newEntry.name] = newEntry
+		LasData.VersionInformation.Fields[newEntry.name] = newEntry
 		// fmt.Printf("Added entry for %s - Key: %s, Data: %v, Description: %s\n", target, newEntry.name, newEntry.value, newEntry.description)
 	case "WellInformation":
 		newEntry, errors := handleStandardInformation(line)
@@ -160,15 +160,15 @@ func parseData(line string, target string) []string {
 			return nil
 		}
 
-		lasData.WellInformation.Fields[newEntry.name] = newEntry
+		LasData.WellInformation.Fields[newEntry.name] = newEntry
 		// fmt.Printf("Added entry for %s - Key: %s, Data: %v, Description: %s\n", target, newEntry.name, newEntry.value, newEntry.description)
 	case "CurveInformation":
 		newEntry := handleCurveInformation(line)
-		lasData.CurveInformation.Fields[newEntry.name] = newEntry
-		lasData.CurveInformation.CurveOrder = append(lasData.CurveInformation.CurveOrder, newEntry.name)
+		LasData.CurveInformation.Fields[newEntry.name] = newEntry
+		LasData.CurveInformation.CurveOrder = append(LasData.CurveInformation.CurveOrder, newEntry.name)
 	case "DepthData":
 		data := handleData(line)
-		lasData.WellData.Fields = append(lasData.WellData.Fields, data)
+		LasData.WellData.Fields = append(LasData.WellData.Fields, data)
 		// fmt.Printf("Added data entry: %+v\n", data)
 	default:
 		fmt.Printf("Unknown target: %s\n", target)
