@@ -80,6 +80,8 @@ func scanLasFile(lasFile string) (struct {
 	scanner := bufio.NewScanner(file)
 	target := ""
 
+	// setup empty struct
+
 	for scanner.Scan() {
 		// fmt.Printf("Scanning target: %s\n", target)
 		line := scanner.Text()
@@ -124,12 +126,12 @@ func scanLasFile(lasFile string) (struct {
 			continue
 		}
 
-		ParseData(line, target)
+		ParseData(line, target, &parsedData)
 
 	}
 
 	// fmt.Printf("LasData: %s\n", LasData)
-	return LasData, nil
+	return parsedData, nil
 }
 
 func main() {
@@ -169,13 +171,8 @@ func main() {
 		}
 		// Extract the Well Name
 		wellData := data.WellInformation.Fields
-		WellName, exists := wellData["WELL"]
+		WellName := wellData["WELL"]
 		DepthData := data.WellData.Fields
-		if exists {
-			fmt.Printf("Well Name: %s\n", DepthData)
-		} else {
-			fmt.Println("Well Name not found in WellInformation.Fields")
-		}
 
 		// fmt.Printf("Data: %s\n", data.WellInformation.Fields)
 

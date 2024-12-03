@@ -38,27 +38,13 @@ type AsciiLog struct {
 	Fields []map[string]string // List of data rows, each row is a map of field values
 }
 
-var LasData = struct {
+type LasData struct {
 	VersionInformation   VersionInformation
 	WellInformation      WellInformation
 	CurveInformation     CurveInformation
 	OtherInformation     EmptyStruct
 	ParameterInformation EmptyStruct
 	WellData             AsciiLog
-}{
-	VersionInformation: VersionInformation{
-		make(map[string]Data),
-	},
-	WellInformation: WellInformation{
-		make(map[string]Data),
-	},
-	CurveInformation: CurveInformation{
-		Fields:     make(map[string]Data),
-		CurveOrder: []string{},
-	},
-	WellData: AsciiLog{
-		[]map[string]string{},
-	},
 }
 
 func handleStandardInformation(line string) (Data, error) {
@@ -116,10 +102,18 @@ func handleCurveInformation(line string) Data {
 	return newEntry
 }
 
-func handleData(line string) map[string]string {
+func handleData(line string, parsedData *struct {
+	VersionInformation   VersionInformation
+	WellInformation      WellInformation
+	CurveInformation     CurveInformation
+	OtherInformation     EmptyStruct
+	ParameterInformation EmptyStruct
+	WellData             AsciiLog
+},
+) map[string]string {
 	// Split the line by whitespace to get each data value
 	values := strings.Fields(line)
-	if len(values) != len(LasData.CurveInformation.CurveOrder) {
+	if len(values) != len(parsedData.CurveInformation.CurveOrder) {
 		fmt.Println("Data line does not match curve information")
 		return nil
 	}
@@ -127,20 +121,26 @@ func handleData(line string) map[string]string {
 	// Map each value to the curve name and add it as a new entry in wellData.Fields
 	dataEntry := make(map[string]string)
 	for i, value := range values {
-		curveName := LasData.CurveInformation.CurveOrder[i]
+		curveName := parsedData.CurveInformation.CurveOrder[i]
 		dataEntry[curveName] = value
 	}
-	LasData.WellData.Fields = append(LasData.WellData.Fields, dataEntry)
-	// fmt.Printf("Added data entry: %+v\n", dataEntry)
 
 	return dataEntry
 }
 
-func ParseData(line string, target string) []string {
+func ParseData(line string, target string, parsedData *struct {
+	VersionInformation   VersionInformation
+	WellInformation      WellInformation
+	CurveInformation     CurveInformation
+	OtherInformation     EmptyStruct
+	ParameterInformation EmptyStruct
+	WellData             AsciiLog
+},
+) ([]string, error) {
 	substrings := []string{"~Version", "~WELL", "#", "~Curve", "~Parameter", "~Other", "~A"}
 	for _, substring := range substrings {
 		if strings.Contains(line, substring) {
-			return nil
+			return nil, errors.New("invalid line")
 		}
 	}
 
@@ -150,35 +150,35 @@ func ParseData(line string, target string) []string {
 		newEntry, errors := handleStandardInformation(line)
 		if errors != nil {
 			fmt.Println(errors)
-			return nil
+			return nil, errors
 		}
 		fmt.Printf("New Version information: %+v\n", newEntry)
 
-		LasData.VersionInformation.Fields[newEntry.Name] = newEntry
+		parsedData.VersionInformation.Fields[newEntry.Name] = newEntry
 		// fmt.Printf("Added entry for %s - Key: %s, Data: %v, Description: %s\n", target, newEntry.name, newEntry.value, newEntry.description)
 	case "WellInformation":
 		newEntry, errors := handleStandardInformation(line)
 		if errors != nil {
 			fmt.Println(errors)
-			return nil
+			return nil, errors
 		}
 
 		fmt.Printf("New Well information: %+v\n", newEntry)
 
-		LasData.WellInformation.Fields[newEntry.Name] = newEntry
+		parsedData.WellInformation.Fields[newEntry.Name] = newEntry
 		// fmt.Printf("Added entry for %s - Key: %s, Data: %v, Description: %s\n", target, newEntry.name, newEntry.value, newEntry.description)
 	case "CurveInformation":
 		newEntry := handleCurveInformation(line)
-		LasData.CurveInformation.Fields[newEntry.Name] = newEntry
-		LasData.CurveInformation.CurveOrder = append(LasData.CurveInformation.CurveOrder, newEntry.Name)
+		parsedData.CurveInformation.Fields[newEntry.Name] = newEntry
+		parsedData.CurveInformation.CurveOrder = append(parsedData.CurveInformation.CurveOrder, newEntry.Name)
 
 	case "DepthData":
-		data := handleData(line)
-		LasData.WellData.Fields = append(LasData.WellData.Fields, data)
+		data := handleData(line, parsedData)
+		parsedData.WellData.Fields = append(parsedData.WellData.Fields, data)
 		// fmt.Printf("Added data entry: %+v\n", data)
 	default:
 		fmt.Printf("Unknown target: %s\n", target)
 	}
 
-	return nil
+	return nil, nil
 }
