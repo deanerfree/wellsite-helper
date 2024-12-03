@@ -1,4 +1,4 @@
-package utils
+package main
 
 import (
 	"errors"
@@ -13,10 +13,10 @@ type StandardInformation struct {
 }
 
 type Data struct {
-	name        string
-	value       interface{}
-	description string
-	unit        string
+	Name        string
+	Value       interface{}
+	Description string
+	Unit        string
 }
 
 type VersionInformation struct {
@@ -42,8 +42,8 @@ var LasData = struct {
 	VersionInformation   VersionInformation
 	WellInformation      WellInformation
 	CurveInformation     CurveInformation
-	otherInformation     EmptyStruct
-	parameterInformation EmptyStruct
+	OtherInformation     EmptyStruct
+	ParameterInformation EmptyStruct
 	WellData             AsciiLog
 }{
 	VersionInformation: VersionInformation{
@@ -75,15 +75,17 @@ func handleStandardInformation(line string) (Data, error) {
 
 	key := strings.TrimSpace(line[:index])
 	unit := strings.TrimSpace(line[index+1 : index+2])
-	data := strings.TrimSpace(line[index+1 : descriptionIndex])
+	data := strings.TrimSpace(line[index+2 : descriptionIndex])
 	description := strings.TrimSpace(line[descriptionIndex+1:])
 
 	newEntry := Data{
-		name:        key,
-		value:       data,
-		description: description,
-		unit:        unit,
+		Name:        key,
+		Value:       data,
+		Description: description,
+		Unit:        unit,
 	}
+
+	// fmt.Printf("Added entry for %s - Key: %s, Data: %v, Description: %s\n", key, newEntry.name, newEntry.value, newEntry.description)
 
 	return newEntry, nil
 }
@@ -105,10 +107,10 @@ func handleCurveInformation(line string) Data {
 
 	// if no description index is found, set it to the end of the line
 	newEntry := Data{
-		name:        strings.TrimSpace(line[:index]),
-		value:       strings.TrimSpace(line[index+1:]),
-		description: strings.TrimSpace(line[descriptionIndex+1:]),
-		unit:        strings.TrimSpace(line[index+1 : index+2]),
+		Name:        strings.TrimSpace(line[:index]),
+		Value:       strings.TrimSpace(line[index+2:]),
+		Description: strings.TrimSpace(line[descriptionIndex+1:]),
+		Unit:        strings.TrimSpace(line[index+1 : index+2]),
 	}
 
 	return newEntry
@@ -144,14 +146,15 @@ func ParseData(line string, target string) []string {
 
 	// Populate the appropriate field based on the target
 	switch target {
-	case "VersionInformation":
+	case ("VersionInformation"):
 		newEntry, errors := handleStandardInformation(line)
 		if errors != nil {
 			fmt.Println(errors)
 			return nil
 		}
+		fmt.Printf("New Version information: %+v\n", newEntry)
 
-		LasData.VersionInformation.Fields[newEntry.name] = newEntry
+		LasData.VersionInformation.Fields[newEntry.Name] = newEntry
 		// fmt.Printf("Added entry for %s - Key: %s, Data: %v, Description: %s\n", target, newEntry.name, newEntry.value, newEntry.description)
 	case "WellInformation":
 		newEntry, errors := handleStandardInformation(line)
@@ -160,12 +163,15 @@ func ParseData(line string, target string) []string {
 			return nil
 		}
 
-		LasData.WellInformation.Fields[newEntry.name] = newEntry
+		fmt.Printf("New Well information: %+v\n", newEntry)
+
+		LasData.WellInformation.Fields[newEntry.Name] = newEntry
 		// fmt.Printf("Added entry for %s - Key: %s, Data: %v, Description: %s\n", target, newEntry.name, newEntry.value, newEntry.description)
 	case "CurveInformation":
 		newEntry := handleCurveInformation(line)
-		LasData.CurveInformation.Fields[newEntry.name] = newEntry
-		LasData.CurveInformation.CurveOrder = append(LasData.CurveInformation.CurveOrder, newEntry.name)
+		LasData.CurveInformation.Fields[newEntry.Name] = newEntry
+		LasData.CurveInformation.CurveOrder = append(LasData.CurveInformation.CurveOrder, newEntry.Name)
+
 	case "DepthData":
 		data := handleData(line)
 		LasData.WellData.Fields = append(LasData.WellData.Fields, data)
