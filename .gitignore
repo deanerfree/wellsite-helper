@@ -1,5 +1,7 @@
+.air.toml
 .env
 .vscode
 
 wellsite-helper
 /vendor
+/tmp
