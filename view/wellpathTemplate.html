@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>{{ .Wellname }} data</title>
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .container {
+      max-width: 1200px;
+      margin: auto;
+    }
+  </style>
+  <!-- Highcharts -->
+  <script src="https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/modules/series-label.js"></script>
+  <script src="https://code.highcharts.com/modules/exporting.js"></script>
+  <script src="https://code.highcharts.com/modules/export-data.js"></script>
+  <script src="https://code.highcharts.com/modules/accessibility.js"></script>
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@2.0.3"
+    integrity="sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq"
+    crossorigin="anonymous"></script>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body class="w-full container">
+  <header class="container">
+    <nav class="flex justify-between items-center py-4">
+      <div class="flex justify-between items-center">
+        <a href="/" class="text-2xl font-bold">Home</a>
+        <a href="/about" class="p-3">About</a>
+        <a href="/contact" class="p-3">Contact</a>
+        <a href="/wellpath" class="p-3">Wellpath</a>
+      </div>
+      <div class="flex justify-between items-center">
+        <a href="/login" class="p-3">Login</a>
+        <a href="/register" class="p-3">Register</a>
+      </div>
+    </nav>
+  </header>
+
+  <div class="flex flex-col justify-center gap-10">
+    <div class="">
+      <h2 class="text-2xl text-center font-bold">{{ .Wellname }}</h2>
+    </div>
+    <div class="text-center">
+      <div class="mt-5 flex flex-row justify-around">
+        <!-- <button id="toggleGamma" class="px-4 py-2 bg-blue-500 text-white rounded">Toggle Gamma</button> -->
+        <div class="flex flex-col gap-2">
+          <div class="flex flex-row">
+            <label for="x-axis">X-axis</label>
+            <select id="x-axis">
+              {{range $index, $value := .Options}}
+              <option value="{{.}}" {{if eq $index 0}}selected{{end}}>{{.}}</option>
+              {{end}}
+            </select>
+          </div>
+        </div>
+
+        <div class="flex flex-col gap-2">
+          <div class="flex flex-row">
+            <label for="y-axis1">Y-axis 1</label>
+            <select id="y-axis1">
+              {{range $index, $value := .Options}}
+              <option value="{{.}}" {{if eq $index 1}}selected{{end}}>{{.}}</option>
+              {{end}}
+            </select>
+          </div>
+          <div class="flex flex-row">
+            <label for="color-y-axis1">Y-axis 1 Color</label>
+            <select id="color-y-axis1">
+            </select>
+          </div>
+        </div>
+
+        <div class="flex flex-col">
+          <div class="flex flex-row">
+            <label for="y-axis2">Y-axis 2</label>
+            <select id="y-axis2">
+              {{range $index, $value := .Options}}
+              <option value="{{.}}" {{if eq $index 2}}selected{{end}}>{{.}}</option>
+              {{end}}
+            </select>
+          </div>
+          <div class="flex flex-row">
+            <label for="color-y-axis2">Color Y-axis 2</label>
+            <select id="color-y-axis2">
+            </select>
+          </div>
+        </div>
+      </div>
+      <div id="container" style="width: 100%; height: 400px; margin: 0 auto"></div>
+
+      <!-- <button id="toggleGas" class="px-4 py-2 bg-green-500 text-white rounded">Toggle Gas</button> -->
+    </div>
+  </div>
+  </div>
+
+  <script>
+    // Function to process data for a given key
+    const depthData = JSON.parse('{{ .DepthData }}')
+    const wellname = "{{ .Wellname }}"
+
+    function processData (key, xAxis) {
+      return depthData.map(item => {
+        if (parseFloat(item[key]) < 0) {
+          item.Gamma = null
+        }
+
+        return [parseFloat(item[xAxis]), parseFloat(item[key]) || null]
+      })
+    }
+
+    function createColorOptions (selectId) {
+      const selectElement = document.getElementById(selectId)
+      const colors = ['red', 'blue', 'green', 'black', 'purple', 'orange']
+
+      colors.forEach((color, index) => {
+        const option = document.createElement("option")
+        option.value = color
+        option.text = color
+        selectElement.appendChild(option)
+      })
+    }
+
+    // Rendering function
+    function renderChart () {
+      // Get selected values for axes
+      const xAxisKey = document.getElementById("x-axis").value
+      const yAxis1Key = document.getElementById("y-axis1").value
+      const yAxis2Key = document.getElementById("y-axis2").value
+
+      // Process data based on selections
+      const xAxisData = processData(xAxisKey, null)
+      const yAxis1Data = processData(yAxis1Key, xAxisKey)
+      const yAxis2Data = processData(yAxis2Key, xAxisKey)
+
+      // Get selected colors
+      const colorY1 = document.getElementById("color-y-axis1").value || 'red'
+      const colorY2 = document.getElementById("color-y-axis2").value || 'green'
+
+
+      // console.log('x axis', xAxisKey, xAxisData)
+      // console.log('y1 axis', yAxis1Key, yAxis1Data)
+      // console.log('y2 axis', yAxis2Key, yAxis2Data)
+
+
+      // Series data
+      const series = [{ name: yAxis1Key, color: colorY1, data: yAxis1Data, yAxis: 0 },
+      { name: yAxis2Key, color: colorY2, data: yAxis2Data, yAxis: 1 }]
+
+      // Highcharts rendering
+      Highcharts.chart('container', {
+        chart: { type: 'line' },
+        title: { text: wellname },
+        xAxis: {
+          title: { text: xAxisKey },
+          labels: { format: '{value}' },
+        },
+        yAxis: [
+          { title: { text: yAxis1Key }, min: 0 },
+          { title: { text: yAxis2Key }, opposite: true, min: 0, }
+        ],
+        series: series,
+      })
+    }
+
+    // Event listeners for axis selection
+    function setupAxisChangeListeners () {
+      const selectElements = ["x-axis", "y-axis1", "y-axis2", "color-y-axis1", "color-y-axis2"]
+      selectElements.forEach(selectId => {
+        document.getElementById(selectId).addEventListener("change", renderChart)
+      })
+    }
+
+    // Initial setup
+    document.addEventListener("DOMContentLoaded", () => {
+      setupAxisChangeListeners()
+      renderChart()
+      // Create color options
+      createColorOptions("color-y-axis1")
+      createColorOptions("color-y-axis2")
+    })
+
+  </script>
+</body>
+
+</html>
