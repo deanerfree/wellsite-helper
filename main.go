@@ -1,16 +1,13 @@
 package main
 
 import (
-	"bufio" // "errors"
 	"encoding/json"
-	"errors"
 	"fmt"
 	"html/template"
 	"io"
 	"log"
 	"net/http"
 	"os"
-	"path/filepath"
 	"strings"
 
 	// "layout"
@@ -30,108 +27,6 @@ type TemplateRenderer struct {
 // Render method implementation for Echo's renderer interface
 func (t *TemplateRenderer) Render(w io.Writer, name string, data interface{}, c echo.Context) error {
 	return t.templates.ExecuteTemplate(w, name, data)
-}
-
-func scanLasFile(lasFile string) (struct {
-	VersionInformation   VersionInformation
-	WellInformation      WellInformation
-	CurveInformation     CurveInformation
-	OtherInformation     EmptyStruct
-	ParameterInformation EmptyStruct
-	WellData             AsciiLog
-}, error,
-) {
-	parsedData := struct {
-		VersionInformation   VersionInformation
-		WellInformation      WellInformation
-		CurveInformation     CurveInformation
-		OtherInformation     EmptyStruct
-		ParameterInformation EmptyStruct
-		WellData             AsciiLog
-	}{
-		VersionInformation: VersionInformation{
-			Fields: make(map[string]Data),
-		},
-		WellInformation: WellInformation{
-			Fields: make(map[string]Data),
-		},
-		CurveInformation: CurveInformation{
-			Fields:     make(map[string]Data),
-			CurveOrder: []string{},
-		},
-		WellData: AsciiLog{
-			Fields: []map[string]string{},
-		},
-	}
-	// Check the file extension
-	if filepath.Ext(lasFile) != ".las" {
-		fmt.Println("Invalid file extension")
-
-		return parsedData, errors.New("invalid file extension")
-	}
-
-	file, err := os.Open(lasFile)
-	if err != nil {
-		fmt.Println(err)
-		return parsedData, err
-	}
-	defer file.Close()
-
-	scanner := bufio.NewScanner(file)
-	target := ""
-
-	// setup empty struct
-
-	for scanner.Scan() {
-		// fmt.Printf("Scanning target: %s\n", target)
-		line := scanner.Text()
-
-		if strings.Contains(line, "~V") {
-			// fmt.Println("Populate version information")
-			// populate the version information struct skip to the next line
-			target = "VersionInformation"
-			continue
-		}
-
-		if strings.Contains(line, "~W") {
-			// fmt.Println("Populate version information")
-			target = "WellInformation"
-			continue
-		}
-
-		if strings.Contains(line, "~C") {
-			// fmt.Println("Populate curve information")
-			target = "CurveInformation"
-			continue
-		}
-
-		if strings.Contains(line, "~P") {
-			// fmt.Println("Populate parameter information")
-			target = "ParameterInformation"
-			// populate the parameter information struct skip to the next line
-			continue
-		}
-
-		if strings.Contains(line, "~O") {
-			// fmt.Println("Populate other information")
-			target = "OtherInformation"
-			// populate the other information struct skip to the next line
-			continue
-		}
-
-		if strings.Contains(line, "~A") {
-			// fmt.Println("Populate well information")
-			target = "DepthData"
-			// populate the well information struct skip to the next line
-			continue
-		}
-
-		ParseData(line, target, &parsedData)
-
-	}
-
-	// fmt.Printf("LasData: %s\n", LasData)
-	return parsedData, nil
 }
 
 func main() {
