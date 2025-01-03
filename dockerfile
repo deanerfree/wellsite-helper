@@ -9,9 +9,12 @@ RUN go mod download
 
 # Copy all source files into the Working Directory
 COPY *.go ./
+COPY index.html ./
 
 # Copy the mockData folder into the container
 COPY mockData ./mockData
+COPY static ./static
+COPY view ./view
 
 # Build the Go application
 RUN go build -o ./wellsite-helper
