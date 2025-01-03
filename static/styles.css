@@ -1,0 +1,10 @@
+/* custom-styles.css */
+.header {
+  @apply bg-gray-800 text-white p-4 text-center flex flex-col items-center;
+}
+.header-title {
+  @apply text-yellow;
+}
+.nav-link {
+  @apply text-blue-500;
+}

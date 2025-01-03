@@ -3,29 +3,28 @@
 
 <head>
   <title>{{ .Wellname }} data</title>
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@2.0.3"
+    integrity="sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq"
+    crossorigin="anonymous"></script>
   <!-- Tailwind -->
   <script src="https://cdn.tailwindcss.com"></script>
+  <script type="module" src="../static/js/header.js" defer></script>
   <style>
     .container {
       max-width: 1200px;
       margin: auto;
     }
   </style>
-  <!-- Highcharts -->
-  <script src="https://code.highcharts.com/highcharts.js"></script>
-  <script src="https://code.highcharts.com/modules/series-label.js"></script>
-  <script src="https://code.highcharts.com/modules/exporting.js"></script>
-  <script src="https://code.highcharts.com/modules/export-data.js"></script>
-  <script src="https://code.highcharts.com/modules/accessibility.js"></script>
-  <!-- HTMX -->
-  <script src="https://unpkg.com/htmx.org@2.0.3"
-    integrity="sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq"
-    crossorigin="anonymous"></script>
-  <link rel="stylesheet" type="text/css" href="style.css">
+
+
+  <!-- <link rel="stylesheet" type="text/css" href="style.css"> -->
 </head>
 
-<body class="w-full container">
-  <header class="container">
+
+<body class="w-full">
+  <header-component></header-component>
+  <!-- <header class="container">
     <nav class="flex justify-between items-center py-4">
       <div class="flex justify-between items-center">
         <a href="/" class="text-2xl font-bold">Home</a>
@@ -38,18 +37,31 @@
         <a href="/register" class="p-3">Register</a>
       </div>
     </nav>
-  </header>
+  </header> -->
 
-  <div class="flex flex-col justify-center gap-10">
+
+  <div class="flex flex-col justify-center gap-20 container">
     <div class="">
       <h2 class="text-2xl text-center font-bold">{{ .Wellname }}</h2>
     </div>
-    <div class="text-center">
+
+    <!-- Graph data -->
+    <div id="drillData" class="text-center flex flex-col gap-8">
       <div class="mt-5 flex flex-row justify-around">
-        <!-- <button id="toggleGamma" class="px-4 py-2 bg-blue-500 text-white rounded">Toggle Gamma</button> -->
         <div class="flex flex-col gap-2">
           <div class="flex flex-row">
-            <label for="x-axis">X-axis</label>
+            <label for="startDepth">Start Depth</label>
+            <input id="startDepth">
+
+          </div>
+        </div>
+
+        <div class="flex flex-col">
+          <div class="flex flex-row">
+            <h3>X-axis</h3>
+          </div>
+          <div class="flex flex-row">
+            <label for="x-axis">Data: </label>
             <select id="x-axis">
               {{range $index, $value := .Options}}
               <option value="{{.}}" {{if eq $index 0}}selected{{end}}>{{.}}</option>
@@ -58,9 +70,12 @@
           </div>
         </div>
 
-        <div class="flex flex-col gap-2">
+        <div class="flex flex-col">
           <div class="flex flex-row">
-            <label for="y-axis1">Y-axis 1</label>
+            <h3>Y-axis 1</h3>
+          </div>
+          <div class="flex flex-row gap-2">
+            <label for="y-axis1">Data:</label>
             <select id="y-axis1">
               {{range $index, $value := .Options}}
               <option value="{{.}}" {{if eq $index 1}}selected{{end}}>{{.}}</option>
@@ -68,7 +83,7 @@
             </select>
           </div>
           <div class="flex flex-row">
-            <label for="color-y-axis1">Y-axis 1 Color</label>
+            <label for="color-y-axis1">Color:</label>
             <select id="color-y-axis1">
             </select>
           </div>
@@ -76,7 +91,10 @@
 
         <div class="flex flex-col">
           <div class="flex flex-row">
-            <label for="y-axis2">Y-axis 2</label>
+            <h3>Y-axis 2</h3>
+          </div>
+          <div class="flex flex-row gap-2">
+            <label for="y-axis2">Data:</label>
             <select id="y-axis2">
               {{range $index, $value := .Options}}
               <option value="{{.}}" {{if eq $index 2}}selected{{end}}>{{.}}</option>
@@ -84,49 +102,79 @@
             </select>
           </div>
           <div class="flex flex-row">
-            <label for="color-y-axis2">Color Y-axis 2</label>
+            <label for="color-y-axis2">Color:</label>
             <select id="color-y-axis2">
             </select>
           </div>
         </div>
       </div>
       <div id="container" style="width: 100%; height: 400px; margin: 0 auto"></div>
-
-      <!-- <button id="toggleGas" class="px-4 py-2 bg-green-500 text-white rounded">Toggle Gas</button> -->
     </div>
-  </div>
-  </div>
 
+    <!-- Survey data -->
+
+    <div id="survey"
+      class="text-center w-full bg-gray-200 border-4 border-gray-400 border-dashed p-4 mb-10 overflow-hidden rounded">
+      <form id="surveyForm" hx-post="/upload" hx-target="#survey" hx-swap="innerHTML" hx-encoding="multipart/form-data">
+        <div class="dropzone flex flex-row justify-center items-center">
+          <input name="file" type="file">
+          <!-- submit button -->
+          <button type="submit" class="px-4 py-2 bg-blue-500 text-white rounded">Upload</button>
+        </div>
+      </form>
+    </div>
+
+
+  </div>
+  <!-- Highcharts -->
+  <script src=" https://code.highcharts.com/highcharts.js"></script>
+  <script src="https://code.highcharts.com/modules/series-label.js"></script>
+  <script src="https://code.highcharts.com/modules/exporting.js"></script>
+  <script src="https://code.highcharts.com/modules/export-data.js"></script>
+  <script src="https://code.highcharts.com/modules/accessibility.js"></script>
   <script>
+    const colors = ['red', 'blue', 'green', 'black', 'purple', 'orange']
     // Function to process data for a given key
     const depthData = JSON.parse('{{ .DepthData }}')
     const wellname = "{{ .Wellname }}"
 
     function processData (key, xAxis) {
       return depthData.map(item => {
-        if (parseFloat(item[key]) < 0) {
-          item.Gamma = null
-        }
+        // if (parseFloat(item[key]) < 0) {
+        //   item.Gamma = null
+        // }
 
         return [parseFloat(item[xAxis]), parseFloat(item[key]) || null]
       })
     }
 
-    function createColorOptions (selectId) {
+    function createColorOptions (selectId, defaultColor) {
       const selectElement = document.getElementById(selectId)
-      const colors = ['red', 'blue', 'green', 'black', 'purple', 'orange']
 
-      colors.forEach((color, index) => {
+      colors.forEach(color => {
         const option = document.createElement("option")
         option.value = color
-        option.text = color
+        option.text = color.charAt(0).toUpperCase() + color.slice(1)
+        if (color === defaultColor) {
+          option.selected = true // Pre-select the default color
+        }
         selectElement.appendChild(option)
       })
     }
 
+
+    function renderEmptyState () {
+      const graphContainer = document.getElementById("graph")
+      graphContainer.innerHTML = `
+    <div class="text-center p-8">
+      <h3 class="text-xl font-semibold">No Data Available</h3>
+      <p>Please upload a file to view the graph.</p>
+    </div>
+  `
+    }
+
     // Rendering function
     function renderChart () {
-      // Get selected values for axes
       const xAxisKey = document.getElementById("x-axis").value
       const yAxis1Key = document.getElementById("y-axis1").value
       const yAxis2Key = document.getElementById("y-axis2").value
@@ -136,9 +184,8 @@
       const yAxis1Data = processData(yAxis1Key, xAxisKey)
       const yAxis2Data = processData(yAxis2Key, xAxisKey)
 
-      // Get selected colors
-      const colorY1 = document.getElementById("color-y-axis1").value || 'red'
-      const colorY2 = document.getElementById("color-y-axis2").value || 'green'
+      let colorY1 = document.getElementById("color-y-axis1").value
+      let colorY2 = document.getElementById("color-y-axis2").value
 
 
       // console.log('x axis', xAxisKey, xAxisData)
@@ -157,6 +204,7 @@
         xAxis: {
           title: { text: xAxisKey },
           labels: { format: '{value}' },
+          min: startDepth.value
         },
         yAxis: [
           { title: { text: yAxis1Key }, min: 0 },
@@ -172,15 +220,20 @@
       selectElements.forEach(selectId => {
         document.getElementById(selectId).addEventListener("change", renderChart)
       })
+
+      document.getElementById("startDepth").addEventListener("input", renderChart)
     }
+
+    const startDepth = document.getElementById("startDepth")
+    startDepth.value = depthData[0].Depth
 
     // Initial setup
     document.addEventListener("DOMContentLoaded", () => {
+      createColorOptions("color-y-axis1", "red")
+      createColorOptions("color-y-axis2", "green")
       setupAxisChangeListeners()
       renderChart()
-      // Create color options
-      createColorOptions("color-y-axis1")
-      createColorOptions("color-y-axis2")
+
     })
 
   </script>

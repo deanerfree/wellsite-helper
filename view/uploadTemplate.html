@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>{{ .Wellname }} data</title>
+  <!-- Tailwind -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .container {
+      max-width: 1200px;
+      margin: auto;
+    }
+  </style>
+  <!-- HTMX -->
+  <script src="https://unpkg.com/htmx.org@2.0.3"
+    integrity="sha384-0895/pl2MU10Hqc6jd4RvrthNlDiE9U1tWmX7WRESftEDRosgxNsQG/Ze9YMRzHq"
+    crossorigin="anonymous"></script>
+  <link rel="stylesheet" type="text/css" href="style.css">
+</head>
+
+<body class="w-full container">
+  <header class="container">
+    <nav class="flex justify-between items-center py-4">
+      <div class="flex justify-between items-center">
+        <a href="/" class="text-2xl font-bold">Home</a>
+        <a href="/about" class="p-3">About</a>
+        <a href="/contact" class="p-3">Contact</a>
+        <a href="/wellpath" class="p-3">Wellpath</a>
+      </div>
+      <div class="flex justify-between items-center">
+        <a href="/login" class="p-3">Login</a>
+        <a href="/register" class="p-3">Register</a>
+      </div>
+    </nav>
+  </header>
+  <div class="flex flex-col justify-center gap-10">
+    <div class="">
+      <h2 class="text-2xl text-center font-bold">Upload Data</h2>
+    </div>
+    <div class="text-center w-full bg-gray-200 p-10">
+      <form action="/upload" method="post" enctype="multipart/form-data" class="dropzone w-full"
+        id="my-awesome-dropzone">
+        <div class="fallback">
+          <input name="file" type="file" multiple />
+        </div>
+      </form>
+    </div>
+  </div>
+
+
+</body>
+
+</html>
