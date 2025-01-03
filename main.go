@@ -122,7 +122,38 @@ func main() {
 		return c.Render(http.StatusOK, "wellpathTemplate.html", map[string]interface{}{
 			"Wellname":  WellName.Value,
 			"DepthData": template.JS(serializedDepthData), // Safely inject JSON
+			"Options":   keys,
 		})
+	})
+
+	e.POST("/upload", func(c echo.Context) error {
+		// Read file
+		// survey := SurveyData{}
+		fmt.Print("Uploading file\n")
+		// check file type
+
+		file, err := c.FormFile("file")
+		if err != nil {
+			log.Printf("Error retrieving file: %v", err)
+			return c.String(http.StatusBadRequest, "Failed to upload file")
+		}
+
+		fmt.Print(file.Filename + "\n" + file.Header.Get("Content-Type") + "\n")
+		// how do I check the file type of file
+		// if file type is .las then scanLasFile
+		// if file type is .txt then scanSurveyFile
+
+		// if filepath.Ext(file.Filename) == ".txt" {
+		// 	survey, err = ScanSurveyFile(file)
+		// }
+
+		ScanSurveyFile(file)
+
+		return c.HTML(http.StatusOK, `
+      <div id="survey" class="text-center w-full bg-gray-200 p-4 overflow-hidden rounded">
+        <p>File uploaded successfully. Please upload another file if needed.</p>
+      </div>
+    `)
 	})
 
 	// http.HandleFunc("/las", func(w http.ResponseWriter, r *http.Request) {
