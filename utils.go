@@ -126,6 +126,11 @@ func handleData(line string, parsedData *struct {
 	dataEntry := make(map[string]string)
 	for i, value := range values {
 		curveName := parsedData.CurveInformation.CurveOrder[i]
+
+		if strings.Contains(strings.ToLower(curveName), "gas") {
+			curveName = "Total_Gas"
+		}
+
 		dataEntry[curveName] = value
 	}
 
@@ -178,6 +183,7 @@ func ParseData(line string, target string, parsedData *struct {
 
 	case "DepthData":
 		data := handleData(line, parsedData)
+
 		parsedData.WellData.Fields = append(parsedData.WellData.Fields, data)
 		// fmt.Printf("Added data entry: %+v\n", data)
 	default:
