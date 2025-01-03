@@ -46,9 +46,11 @@ func main() {
 		log.Fatal("$PORT must be set")
 	}
 
+	// Serve static files
+	e.Static("/static", "static")
 	// Set up the template renderer
 	renderer := &TemplateRenderer{
-		templates: template.Must(template.ParseFiles("view/layout/index.html", "view/lasTemplate.html")),
+		templates: template.Must(template.ParseFiles("view/layout/index.html", "view/wellpathTemplate.html", "view/uploadTemplate.html")),
 	}
 	e.Renderer = renderer
 
@@ -58,15 +60,19 @@ func main() {
 		return c.Render(http.StatusOK, "index.html", nil)
 	})
 
-	e.GET("/las", func(c echo.Context) error {
-		lasFile := "mockData/test2.las"
-		data, err := scanLasFile(lasFile)
+	e.GET("/wellpath", func(c echo.Context) error {
+		lasFile := "mockData/test3.las"
+		// surveyFile := "mockData/survey3.txt"
+
+		data, err := ScanLasFile(lasFile)
 		if err != nil {
 			fmt.Println(err)
 		}
 		// Extract the Well Name
 		wellData := data.WellInformation.Fields
 		WellName := wellData["WELL"]
+		// if the Fields contains an key with the name "gas" then we can assume that the data is a gas data and change the object key to "total_gas"
+
 		DepthData := data.WellData.Fields
 
 		// fmt.Printf("Data: %s\n", data.WellInformation.Fields)
@@ -77,7 +83,43 @@ func main() {
 			return c.String(http.StatusInternalServerError, "Failed to process DepthData")
 		}
 
-		return c.Render(http.StatusOK, "lasTemplate.html", map[string]interface{}{
+		// create an struct to hold the data of the first row of the data
+		firstRowData := DepthData[0]
+		// create an array to hold the keys of the first row data
+		var keys []string
+		// loop through the first row data and append the keys to the keys array
+
+		for key := range firstRowData {
+			keys = append(keys, key)
+		}
+
+		if keys[0][0] != 'D' && keys[0][0] != 'M' { // Check if the first key doesn't start with 'D' or 'M'
+			for i, key := range keys {
+				if key[0] == 'D' || key[0] == 'M' { // Find a key starting with 'D' or 'M'
+					// Remove the key from the array
+					keys = append(keys[:i], keys[i+1:]...)
+					// Insert the key at the front of the array
+					keys = append([]string{key}, keys...)
+					break // Exit the loop after moving the key
+				}
+			}
+		}
+
+		// Move specific items, like "rop", to the end
+		for i, key := range keys {
+			if strings.ToLower(key) == "rop" {
+				keys = append(keys[:i], keys[i+1:]...) // Remove "rop"
+				keys = append(keys, "rop")             // Add "rop" to the end
+				break
+			}
+		}
+
+		// if err != nil {
+		// 	log.Printf("Error serializing Keys: %v", err)
+		// 	return c.String(http.StatusInternalServerError, "Failed to process Keys")
+		// }
+
+		return c.Render(http.StatusOK, "wellpathTemplate.html", map[string]interface{}{
 			"Wellname":  WellName.Value,
 			"DepthData": template.JS(serializedDepthData), // Safely inject JSON
 		})
